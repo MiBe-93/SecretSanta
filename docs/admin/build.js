@@ -86,8 +86,8 @@ export async function createLottery({ names, exclusions, noMutual, baseUrl, iter
   files.unshift({ path: 'data/participants.json', content: JSON.stringify({ v: 1, participants }, null, 2) + '\n' });
 
   const header =
-    'VARNING: Den här filen innehåller PIN-koder. Checka ALDRIG in den i repot och dela den inte. ' +
-    'Skicka bara varje persons eget meddelande till just den personen, radera sedan filen.\n';
+    'VARNING: Den här filen innehåller PIN-koder. Checka ALDRIG in den i repot och skicka bara varje persons eget meddelande till just den personen.\n' +
+    'Spara filen på din egen dator: du behöver den om någon glömmer sin kod (då skickar du om just den personens meddelande). Radera den efter jul.\n';
   const blocks = [...people]
     .sort((a, b) => a.name.localeCompare(b.name, 'sv'))
     .map((p) => `=== ${p.name} ===\n${messageFor(p.name, url, p.pin)}\n`);

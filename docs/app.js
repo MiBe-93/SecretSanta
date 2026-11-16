@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { decryptEntry } from './lib/crypto.js';
+import { loadParticipants, openEnvelope, MESSAGES } from './lib/lookup.js';
 
 const $ = (id) => document.getElementById(id);
 const AUTO_HIDE_SECONDS = 60;
@@ -20,16 +20,7 @@ function showError(text) {
 }
 
 async function load() {
-  let participants = null;
-  try {
-    const res = await fetch('data/participants.json', { cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' });
-    if (res.ok) {
-      const json = await res.json();
-      if (json && Array.isArray(json.participants) && json.participants.length > 0) participants = json.participants;
-    }
-  } catch {
-    participants = null;
-  }
+  const participants = await loadParticipants();
   $('loading').hidden = true;
   if (!participants) {
     $('not-ready').hidden = false;
@@ -70,12 +61,6 @@ function startWait(seconds) {
   waitTimer = setInterval(tick, 1000);
 }
 
-async function fetchEntry(id) {
-  const res = await fetch(`data/${id}.json`, { cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' });
-  if (!res.ok) return null;
-  return res.text();
-}
-
 $('form').addEventListener('submit', async (ev) => {
   ev.preventDefault();
   if (busy || $('submit').disabled) return;
@@ -88,33 +73,29 @@ $('form').addEventListener('submit', async (ev) => {
   busy = true;
   $('submit').disabled = true;
   $('submit').textContent = 'Kontrollerar…';
-  let name = null;
-  let netError = false;
+  let result;
   try {
-    const text = await fetchEntry(id).catch(() => {
-      netError = true;
-      return null;
-    });
-    if (netError) {
-      showError('Ingen anslutning. Försök igen.');
-      $('submit').disabled = false;
-      $('submit').textContent = 'Visa min person';
-      return;
-    }
-    name = text === null ? null : await decryptEntry({ id, pin, file: text }).catch(() => null);
+    result = await openEnvelope({ id, pin });
   } finally {
     busy = false;
   }
 
-  if (name === null) {
+  if (result.ok) {
+    failures = 0;
+    show(result.name);
+    return;
+  }
+  if (result.reason === 'wrong-code') {
     failures++;
-    showError('Fel kod');
+    showError(MESSAGES.wrongCode);
     $('pin').value = '';
     startWait(Math.min(2 ** failures, MAX_WAIT_SECONDS));
     return;
   }
-  failures = 0;
-  show(name);
+  // Gammal lottning (404) eller nätfel: inget fel på koden, ingen väntetid.
+  showError(result.message);
+  $('submit').disabled = false;
+  $('submit').textContent = 'Visa min person';
 });
 
 function show(name) {
