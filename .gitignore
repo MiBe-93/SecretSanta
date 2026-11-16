@@ -1,0 +1,11 @@
+# Innehåller PIN-koder - får ALDRIG checkas in
+utskick.txt
+utskick*.txt
+*.zip
+
+# Lokala filer
+config.local.*
+*.local
+.env
+node_modules/
+.DS_Store
