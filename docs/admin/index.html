@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="color-scheme" content="light dark">
+  <title>Admin – Secret Santa</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+</head>
+<body>
+  <main>
+    <h1>Admin: lotta Secret Santa</h1>
+    <div class="msg warn">
+      Allt körs i din webbläsare. Inget skickas eller sparas. <strong>Stäng fliken när du är klar</strong> – då försvinner allt ur minnet.
+      Verktyget visar aldrig vem som fått vem.
+    </div>
+
+    <form id="admin" class="card" autocomplete="off">
+      <label for="names">Namn (för- och efternamn, ett per rad)</label>
+      <textarea id="names" autocomplete="off" autocapitalize="words" spellcheck="false"></textarea>
+      <div id="names-info" class="muted"></div>
+      <div id="names-warn" class="msg err" hidden></div>
+      <button id="fill" type="button" class="secondary">Fyll med testnamn</button>
+
+      <h2>Undantag</h2>
+      <p class="muted">Två personer som inte får dra varandra (gäller åt båda håll), t.ex. par.</p>
+      <div class="row">
+        <select id="ex-a" aria-label="Första personen"></select>
+        <select id="ex-b" aria-label="Andra personen"></select>
+      </div>
+      <button id="ex-add" type="button" class="secondary">Lägg till undantag</button>
+      <ul id="ex-list" class="pairs"></ul>
+
+      <label class="check"><input id="no-mutual" type="checkbox" checked> Inga ömsesidiga byten (A ger till B och B ger till A)</label>
+
+      <label for="url">Sidans publika adress</label>
+      <input id="url" type="url" inputmode="url" placeholder="https://ANVÄNDARNAMN.github.io/REPONAMN/" autocomplete="off" autocapitalize="off" spellcheck="false">
+
+      <button id="go" type="button">Lotta</button>
+    </form>
+
+    <div id="error" class="msg err" role="alert" hidden></div>
+    <div id="warnings"></div>
+
+    <section id="done" class="card" hidden>
+      <div id="done-msg" class="msg ok"></div>
+      <div class="msg err">
+        <strong>Viktigt:</strong> <code>utskick.txt</code> innehåller PIN-koder. Den får <strong>aldrig</strong> checkas in i repot eller delas.
+        Skicka varje persons meddelande bara till just den personen. Spara filen på din egen dator (du behöver den om någon glömmer sin kod) och radera den efter jul.
+      </div>
+      <a id="dl-zip" class="button" href="#" download="secret-santa-data.zip">1. Ladda ner data (ZIP)</a>
+      <a id="dl-txt" class="button" href="#" download="utskick.txt">2. Ladda ner utskick.txt</a>
+      <p class="muted">ZIP-filen ska in i repot (se README). Packa upp den så att mappen <code>data</code> hamnar i mappen <code>docs</code>. En ny lottning ger nya koder – alla måste få nytt utskick.</p>
+    </section>
+  </main>
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

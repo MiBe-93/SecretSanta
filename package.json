@@ -1,0 +1,11 @@
+{
+  "name": "secret-santa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Statisk Secret Santa-app utan server. Allt kryptering sker i webbläsaren.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "rensa-data": "node scripts/rensa-data.mjs"
+  }
+}

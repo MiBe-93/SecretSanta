@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="color-scheme" content="light dark">
+  <title>Secret Santa</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+  <main>
+    <h1 id="title">Secret Santa</h1>
+
+    <p id="loading" class="muted">Laddar…</p>
+    <div id="not-ready" class="msg warn" hidden>Lottningen är inte gjord än.</div>
+
+    <form id="form" class="card" autocomplete="off" hidden>
+      <label for="who">Välj ditt namn</label>
+      <select id="who" required></select>
+
+      <label for="pin">Din kod (4 siffror, den du fått i meddelandet)</label>
+      <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+
+      <button id="submit" type="submit">Visa min person</button>
+      <div id="error" class="msg err" role="alert" hidden></div>
+      <p class="muted" id="forgot"></p>
+    </form>
+
+    <section id="result" class="card" hidden aria-live="polite">
+      <p class="center">Du ska ge julklapp till:</p>
+      <div id="recipient" class="big-name"></div>
+      <p class="center">Det här är din person. Det blir alltid samma person, ingen ny lottning sker.</p>
+      <p class="center muted" id="countdown"></p>
+      <button id="hide" type="button" class="secondary">Dölj</button>
+    </section>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
