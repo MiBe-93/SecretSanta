@@ -5,6 +5,6 @@
   "description": "Statisk Secret Santa-app utan server. Allt kryptering sker i webbläsaren.",
   "type": "module",
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test"
   }
 }
