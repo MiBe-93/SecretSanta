@@ -58,10 +58,11 @@ function renderExclusions() {
 }
 
 function onNamesChanged() {
-  const { names, duplicates, tooLong } = currentNames();
+  const { names, duplicates, tooLong, invalid } = currentNames();
   $('names-info').textContent = `${names.length} namn`;
   const problems = [];
-  if (duplicates.length) problems.push(`Dubbletter: ${duplicates.join(', ')}. Ta bort eller skilj dem åt (t.ex. med mellannamn).`);
+  if (duplicates.length) problems.push(`Dubbletter: ${duplicates.join(', ')}. Ta bort eller skilj dem åt (t.ex. med mellannamn). Namn som bara skiljer sig åt på stor/liten bokstav, å/ä/ö eller bindestreck räknas som samma namn.`);
+  if (invalid.length) problems.push(`Saknar bokstäver: ${invalid.join(', ')}.`);
   if (tooLong.length) problems.push(`För långt namn: ${tooLong.join(', ')}.`);
   $('names-warn').textContent = problems.join(' ');
   $('names-warn').hidden = problems.length === 0;
@@ -110,7 +111,8 @@ function clearDownloads() {
   for (const u of urls) URL.revokeObjectURL(u);
   urls = [];
   $('dl-zip').removeAttribute('href');
-  $('dl-txt').removeAttribute('href');
+  $('message').value = '';
+  $('copied').hidden = true;
   $('done').hidden = true;
 }
 
@@ -118,8 +120,8 @@ $('go').addEventListener('click', async () => {
   showError('');
   showWarnings([]);
   clearDownloads();
-  const { names, duplicates, tooLong } = currentNames();
-  if (duplicates.length || tooLong.length) return showError('Rätta namnlistan först (se varningen under den).');
+  const { names, duplicates, tooLong, invalid } = currentNames();
+  if (duplicates.length || tooLong.length || invalid.length) return showError('Rätta namnlistan först (se varningen under den).');
   if (names.length < 2) return showError('Lägg in minst två namn.');
 
   const button = $('go');
@@ -134,11 +136,10 @@ $('go').addEventListener('click', async () => {
       iterations: CONFIG.iterations,
     });
     const zip = new Blob([createZip(result.files)], { type: 'application/zip' });
-    const txt = new Blob([result.utskick], { type: 'text/plain;charset=utf-8' });
-    urls = [URL.createObjectURL(zip), URL.createObjectURL(txt)];
+    urls = [URL.createObjectURL(zip)];
     $('dl-zip').href = urls[0];
-    $('dl-txt').href = urls[1];
-    $('done-msg').textContent = `Lottning klar, ${result.files.length} filer skapade (${result.count} personer + participants.json).`;
+    $('message').value = result.message;
+    $('done-msg').textContent = `Lottning klar, ${result.files.length} filer skapade (${result.count} personer + meta.json).`;
     $('done').hidden = false;
     showWarnings(result.warnings);
     $('done').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -148,6 +149,18 @@ $('go').addEventListener('click', async () => {
   } finally {
     button.disabled = false;
     button.textContent = 'Lotta';
+  }
+});
+
+$('copy').addEventListener('click', async () => {
+  const box = $('message');
+  box.select();
+  try {
+    await navigator.clipboard.writeText(box.value);
+    $('copied').hidden = false;
+  } catch {
+    // Webbläsaren tillät inte kopiering: texten är markerad, kopiera själv.
+    $('copied').hidden = true;
   }
 });
 
