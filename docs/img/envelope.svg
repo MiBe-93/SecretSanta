@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 240" width="330" height="240" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- kuvert -->
+  <rect x="48" y="62" width="224" height="140" rx="5" fill="#FBF3E0" stroke="#24473A" stroke-width="2.6"/>
+  <path d="M50 66 L160 146 L270 66" stroke="#24473A" stroke-width="2.6"/>
+  <path d="M50 199 L136 124" stroke="#24473A" stroke-width="2.2"/>
+  <path d="M270 199 L184 124" stroke="#24473A" stroke-width="2.2"/>
+  <!-- hjärta som sigill -->
+  <path d="M160 168 C146 156 140 148 146 141 C151 135 158 137 160 142 C162 137 169 135 174 141 C180 148 174 156 160 168 Z" fill="#B3263E" stroke="#8C1B2E" stroke-width="2"/>
+  <!-- rött band -->
+  <path d="M50 196 C110 188 170 192 232 170" stroke="#B3263E" stroke-width="3.2"/>
+  <path d="M232 170 C246 158 262 168 252 180 C244 190 232 180 232 170 Z" stroke="#B3263E" stroke-width="3.2" fill="#FBF3E0"/>
+  <path d="M232 170 C220 158 206 172 218 182 C226 188 236 180 232 170 Z" stroke="#B3263E" stroke-width="3.2" fill="#FBF3E0"/>
+  <path d="M236 178 C244 194 256 206 266 224" stroke="#B3263E" stroke-width="3.2"/>
+  <path d="M230 180 C226 198 232 214 244 232" stroke="#B3263E" stroke-width="3.2"/>
+  <!-- bandkrull vänster -->
+  <path d="M52 76 C20 54 6 90 22 122 C32 140 46 130 40 116" stroke="#B3263E" stroke-width="3.2"/>
+  <path d="M48 70 C30 44 6 62 10 86" stroke="#B3263E" stroke-width="3.2"/>
+  <!-- järnek -->
+  <path d="M236 60 C246 40 262 30 280 28" stroke="#3E7A55" stroke-width="2.4"/>
+  <path d="M244 48 C236 36 248 26 256 34 C262 40 254 50 244 48 Z" fill="#3E7A55" stroke="#24473A" stroke-width="1.6"/>
+  <path d="M258 36 C262 24 276 22 280 30 C282 38 270 42 258 36 Z" fill="#4F8F66" stroke="#24473A" stroke-width="1.6"/>
+  <path d="M250 56 C262 56 270 46 266 40 C258 40 250 46 250 56 Z" fill="#3E7A55" stroke="#24473A" stroke-width="1.6"/>
+  <circle cx="251" cy="40" r="3.4" fill="#B3263E" stroke="none"/>
+  <circle cx="257" cy="45" r="3.4" fill="#B3263E" stroke="none"/>
+  <!-- gnistor -->
+  <path d="M92 26 l4 11 11 4 -11 4 -4 11 -4 -11 -11 -4 11 -4z" fill="#C9A24B" stroke="none"/>
+  <path d="M206 28 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" stroke="#24473A" stroke-width="1.8"/>
+  <path d="M308 114 v14 M301 121 h14" stroke="#C9A24B" stroke-width="2"/>
+  <path d="M158 226 v12 M152 232 h12" stroke="#24473A" stroke-width="2"/>
+  <path d="M24 212 v12 M18 218 h12" stroke="#C9A24B" stroke-width="2"/>
+  <circle cx="14" cy="176" r="2" fill="#C9A24B" stroke="none"/>
+  <circle cx="112" cy="40" r="1.6" fill="#24473A" stroke="none"/>
+</svg>

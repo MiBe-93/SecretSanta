@@ -10,7 +10,8 @@ const script = fileURLToPath(new URL('../scripts/rensa-data.mjs', import.meta.ur
 
 function setup() {
   const dir = mkdtempSync(path.join(tmpdir(), 'rensa-'));
-  writeFileSync(path.join(dir, 'participants.json'), '{}');
+  writeFileSync(path.join(dir, 'meta.json'), '{}');
+  writeFileSync(path.join(dir, 'participants.json'), '{}'); // gammal lottning
   writeFileSync(path.join(dir, '0123456789abcdef.json'), '{}');
   writeFileSync(path.join(dir, 'fedcba9876543210.json'), '{}');
   writeFileSync(path.join(dir, 'annat.txt'), 'rörs inte');
@@ -25,6 +26,7 @@ test('visar filerna, tar bara bort efter "ja", behåller .gitkeep', () => {
     assert.equal(r.status, 0);
     assert.match(r.stdout, /tas bort/);
     assert.match(r.stdout, /0123456789abcdef\.json/);
+    assert.match(r.stdout, /meta\.json/);
     assert.match(r.stdout, /participants\.json/);
     assert.deepEqual(readdirSync(dir).sort(), ['.gitkeep', 'annat.txt']);
   } finally {
@@ -38,7 +40,7 @@ test('svarar man något annat än "ja" tas inget bort', () => {
     for (const input of ['nej\n', '\n', '']) {
       const r = run(dir, input);
       assert.equal(r.status, 1);
-      assert.equal(readdirSync(dir).length, 4);
+      assert.equal(readdirSync(dir).length, 5);
     }
   } finally {
     rmSync(dir, { recursive: true, force: true });

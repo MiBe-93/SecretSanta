@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const dir = path.resolve(process.argv[2] ?? fileURLToPath(new URL('../docs/data/', import.meta.url)));
-const GENERATED = /^(participants|[0-9a-f]{16})\.json$/;
+const GENERATED = /^(meta|participants|[0-9a-f]{16})\.json$/;
 
 let entries = [];
 try {

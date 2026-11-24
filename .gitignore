@@ -1,6 +1,4 @@
-# Innehåller PIN-koder - får ALDRIG checkas in
-utskick.txt
-utskick*.txt
+# Nedladdade lottningar (ZIP) ska in i docs/data/ och sedan raderas, inte checkas in som ZIP
 *.zip
 
 # Lokala filer

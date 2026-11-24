@@ -8,7 +8,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="color-scheme" content="light dark">
   <title>Admin – Secret Santa</title>
-  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="admin.css">
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 </head>
 <body>
@@ -21,6 +21,7 @@
 
     <form id="admin" class="card" autocomplete="off">
       <label for="names">Namn (för- och efternamn, ett per rad)</label>
+      <p class="muted">Skriv namnet så som släkten skriver det, helst bara förnamn och efternamn. Det är det namnet var och en skriver in på sidan (stor/liten bokstav och å/ä/ö spelar ingen roll).</p>
       <textarea id="names" autocomplete="off" autocapitalize="words" spellcheck="false"></textarea>
       <div id="names-info" class="muted"></div>
       <div id="names-warn" class="msg err" hidden></div>
@@ -48,13 +49,17 @@
 
     <section id="done" class="card" hidden>
       <div id="done-msg" class="msg ok"></div>
-      <div class="msg err">
-        <strong>Viktigt:</strong> <code>utskick.txt</code> innehåller PIN-koder. Den får <strong>aldrig</strong> checkas in i repot eller delas.
-        Skicka varje persons meddelande bara till just den personen. Spara filen på din egen dator (du behöver den om någon glömmer sin kod) och radera den efter jul.
+      <div class="msg warn">
+        <strong>Bra att veta:</strong> det finns inga koder. Den som känner till en persons för- och efternamn kan öppna personens lapp.
+        Lapparna är krypterade, men namnet är nyckeln.
       </div>
       <a id="dl-zip" class="button" href="#" download="secret-santa-data.zip">1. Ladda ner data (ZIP)</a>
-      <a id="dl-txt" class="button" href="#" download="utskick.txt">2. Ladda ner utskick.txt</a>
-      <p class="muted">ZIP-filen ska in i repot (se README). Packa upp den så att mappen <code>data</code> hamnar i mappen <code>docs</code>. En ny lottning ger nya koder – alla måste få nytt utskick.</p>
+      <p class="muted">ZIP-filen ska in i repot (se README). Packa upp den så att mappen <code>data</code> hamnar i mappen <code>docs</code>. En ny lottning ersätter alla gamla filer: ta bort de gamla först (<code>npm run rensa-data</code>).</p>
+
+      <label for="message">2. Meddelande till släkten (samma till alla)</label>
+      <textarea id="message" readonly></textarea>
+      <button id="copy" type="button" class="secondary">Kopiera meddelandet</button>
+      <div id="copied" class="msg ok" hidden>Kopierat.</div>
     </section>
   </main>
   <script type="module" src="admin.js"></script>

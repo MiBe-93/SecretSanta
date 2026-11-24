@@ -1,9 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createLottery, parseNames, normalizeBaseUrl } from '../docs/admin/build.js';
+import { createLottery, parseNames, normalizeBaseUrl, messageFor } from '../docs/admin/build.js';
 import { createZip, crc32 } from '../docs/admin/zip.js';
 import { draw } from '../docs/lib/draw.js';
-import { decryptEntry, WrongCodeError } from '../docs/lib/crypto.js';
+import { fileId } from '../docs/lib/crypto.js';
+import { nameKey } from '../docs/lib/names.js';
+import { loadMeta, openEnvelope } from '../docs/lib/lookup.js';
 
 // Endast påhittade namn.
 const NAMES = ['Anna Testsson', 'Bo Provsson', 'Cecilia Exempel', 'David Fiktiv', 'Åsa Påhittad', 'Örjan Mockström', 'Eva Dummy', 'Filip Falsk'];
@@ -24,7 +26,17 @@ async function run(extra = {}) {
   return { result, captured };
 }
 
-test('helhet: varje fil dekrypteras med rätt PIN och motsvarar lottningen', async () => {
+// Låtsas-fetch som serverar filerna ur en lottning, som GitHub Pages skulle göra.
+function serve(files) {
+  const map = new Map(files.map((f) => [f.path, f.content]));
+  return async (url) => {
+    const body = map.get(url.split('?')[0]);
+    if (body === undefined) return { ok: false, status: 404, text: async () => '', json: async () => { throw new Error('404'); } };
+    return { ok: true, status: 200, text: async () => body, json: async () => JSON.parse(body) };
+  };
+}
+
+test('helhet: alla skriver sitt namn och får rätt person, ingen får sig själv', async () => {
   const logs = [];
   const orig = { ...console };
   for (const k of ['log', 'info', 'warn', 'error', 'debug']) console[k] = (...a) => logs.push(a);
@@ -36,49 +48,95 @@ test('helhet: varje fil dekrypteras med rätt PIN och motsvarar lottningen', asy
   }
   assert.equal(logs.length, 0, 'ingen loggning under lottning');
   assert.equal(result.count, NAMES.length);
+  assert.equal(result.files.length, NAMES.length + 1, 'en lapp per person + meta.json');
 
-  const files = new Map(result.files.map((f) => [f.path, f.content]));
-  const { participants } = JSON.parse(files.get('data/participants.json'));
-  assert.equal(participants.length, NAMES.length);
-  assert.deepEqual(participants.map((p) => p.name), [...NAMES].sort((a, b) => a.localeCompare(b, 'sv')));
+  const fetchFn = serve(result.files);
+  const meta = await loadMeta(fetchFn);
+  assert.ok(meta, 'meta.json läses');
 
-  for (const p of participants) {
-    assert.match(p.id, /^[0-9a-f]{16}$/);
-    const block = result.utskick.split('=== ').find((b) => b.startsWith(`${p.name} ===`));
-    assert.ok(block, 'meddelande finns');
-    const pin = block.match(/din kod: (\d{4})\./)[1];
-    assert.ok(block.includes(`Hej ${p.name.split(' ')[0]}!`));
-    assert.ok(block.includes(URL));
+  const seen = new Set();
+  for (const name of NAMES) {
+    const r = await openEnvelope({ typed: name, salt: meta.salt, fetchFn });
+    assert.equal(r.ok, true, name);
+    assert.equal(r.giver, name, 'lappen vet vem den tillhör (för hälsningen)');
+    assert.equal(r.recipient, captured.assignment.get(name));
+    assert.notEqual(r.recipient, name);
+    seen.add(r.recipient);
+  }
+  assert.equal(seen.size, NAMES.length, 'alla får en unik person');
 
-    const file = files.get(`data/${p.id}.json`);
-    assert.equal(await decryptEntry({ id: p.id, pin, file }), captured.assignment.get(p.name));
-    const badPin = String((Number(pin) + 1) % 10000).padStart(4, '0');
-    await assert.rejects(decryptEntry({ id: p.id, pin: badPin, file }), WrongCodeError);
-    // Meddelandet till personen avslöjar inte mottagaren.
-    assert.ok(!block.includes(captured.assignment.get(p.name)));
+  // Undantagen följs.
+  for (const [a, b] of EXCL) {
+    assert.notEqual(captured.assignment.get(a), b);
+    assert.notEqual(captured.assignment.get(b), a);
   }
 });
 
-test('alla krypterade filer är lika stora, filnamn/id avslöjar inget', async () => {
+test('stavningsvarianter av ett namn öppnar samma lapp', async () => {
   const { result, captured } = await run();
-  const enc = result.files.filter((f) => f.path !== 'data/participants.json');
+  const fetchFn = serve(result.files);
+  const { salt } = await loadMeta(fetchFn);
+  for (const typed of ['åsa påhittad', 'ASA PAHITTAD', '  Åsa   Påhittad  ', 'Åsa Maria Påhittad']) {
+    const r = await openEnvelope({ typed, salt, fetchFn });
+    assert.equal(r.ok, true, typed); // även med mellannamn: sidan provar förnamn + efternamn
+    assert.equal(r.recipient, captured.assignment.get('Åsa Påhittad'));
+  }
+});
+
+test('alla krypterade filer är lika stora, filnamn och innehåll avslöjar inga namn', async () => {
+  const { result } = await run();
+  const enc = result.files.filter((f) => f.path !== 'data/meta.json');
   assert.equal(enc.length, NAMES.length);
   assert.equal(new Set(enc.map((f) => f.content.length)).size, 1);
   assert.equal(new Set(enc.map((f) => f.path)).size, NAMES.length);
+  for (const f of enc) assert.match(f.path, /^data\/[0-9a-f]{16}\.json$/);
   for (const f of result.files) {
-    for (const n of NAMES) assert.ok(!f.path.includes(n.split(' ')[0]));
-    if (f.path !== 'data/participants.json') {
-      for (const n of NAMES) assert.ok(!f.content.includes(n), 'klartextnamn i krypterad fil');
+    for (const n of NAMES) {
+      // Korta namndelar ("Bo", "Eva") kan dyka upp av en slump i base64-text, så bara längre delar kontrolleras.
+      for (const part of [...n.split(' ').filter((x) => x.length >= 6), n, nameKey(n)]) {
+        assert.ok(!f.path.toLowerCase().includes(part.toLowerCase()), `namn i filnamn: ${f.path}`);
+        assert.ok(!f.content.toLowerCase().includes(part.toLowerCase()), `namn i ${f.path}`);
+      }
     }
   }
+  const meta = JSON.parse(result.files.find((f) => f.path === 'data/meta.json').content);
+  assert.deepEqual(Object.keys(meta).sort(), ['salt', 'v']);
+  // Det finns ingen deltagarlista i klartext.
+  assert.equal(result.files.some((f) => f.path.includes('participants')), false);
+});
+
+test('filnamnen i lottningen stämmer med id:t som sidan räknar ut', async () => {
+  const { result } = await run();
+  const meta = JSON.parse(result.files.find((f) => f.path === 'data/meta.json').content);
+  const paths = new Set(result.files.map((f) => f.path));
+  for (const n of NAMES) assert.ok(paths.has(`data/${await fileId(meta.salt, nameKey(n))}.json`), n);
+});
+
+test('ny lottning ger nytt salt och nya filnamn (inga filnamn återanvänds)', async () => {
+  const a = await run();
+  const b = await run();
+  const paths = (r) => new Set(r.result.files.map((f) => f.path).filter((x) => x !== 'data/meta.json'));
+  assert.equal([...paths(a)].filter((p) => paths(b).has(p)).length, 0);
+});
+
+test('meddelandet till släkten är gemensamt, har adressen och avslöjar ingenting', async () => {
+  const { result, captured } = await run();
+  assert.equal(result.message, messageFor(URL));
+  assert.ok(result.message.includes(URL));
+  assert.match(result.message, /för- och efternamn/);
+  for (const n of NAMES) assert.ok(!result.message.includes(n));
   assert.ok(captured);
 });
 
-test('ny lottning ger nya id (inga filnamn återanvänds)', async () => {
-  const a = await run();
-  const b = await run();
-  const ids = (r) => new Set(r.result.files.map((f) => f.path).filter((x) => x !== 'data/participants.json'));
-  assert.equal([...ids(a)].filter((p) => ids(b).has(p)).length, 0);
+test('namn som inte går att skilja åt avvisas (annars skulle två personer dela lapp)', async () => {
+  await assert.rejects(
+    createLottery({ names: ['Åsa Berg', 'Asa Berg', 'Cia Test'], exclusions: [], noMutual: true, baseUrl: URL, iterations: 1000 }),
+    /skilja åt/,
+  );
+  await assert.rejects(
+    createLottery({ names: ['Åsa Berg', '---', 'Cia Test'], exclusions: [], noMutual: true, baseUrl: URL, iterations: 1000 }),
+    /saknar bokstäver/,
+  );
 });
 
 test('varning och fel från lottningen når anroparen', async () => {
@@ -90,11 +148,16 @@ test('varning och fel från lottningen når anroparen', async () => {
   );
 });
 
-test('namnlista: radnummer, semikolon, dubbletter, för långa namn', () => {
+test('namnlista: radnummer, semikolon, dubbletter (även å/ä/ö och bindestreck), för långa namn', () => {
   const r = parseNames('1\tPeter Test;\n2  Elin  Test;\n\n3 peter test;\nÅsa Ö;\n');
   assert.deepEqual(r.names, ['Peter Test', 'Elin Test', 'Åsa Ö']);
   assert.deepEqual(r.duplicates, ['Peter Test']);
   assert.equal(parseNames('x'.repeat(64)).tooLong.length, 1);
+
+  const d = parseNames('Åsa Berg\nAsa Berg\nAnna-Lena Ek\nanna lena ek\n');
+  assert.deepEqual(d.names, ['Åsa Berg', 'Anna-Lena Ek']);
+  assert.deepEqual(d.duplicates, ['Åsa Berg', 'Anna-Lena Ek']);
+  assert.deepEqual(parseNames('---\nOk Namn').invalid, ['---']);
 });
 
 test('adress valideras och får snedstreck sist', () => {

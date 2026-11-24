@@ -1,114 +1,77 @@
 import { CONFIG } from './config.js';
-import { loadParticipants, openEnvelope, MESSAGES } from './lib/lookup.js';
+import { loadMeta, openEnvelope } from './lib/lookup.js';
 
 const $ = (id) => document.getElementById(id);
 const AUTO_HIDE_SECONDS = 60;
-const MAX_WAIT_SECONDS = 300;
+const SUBMIT_LABEL = 'Lotta fram min julklappskompis';
 
-let failures = 0; // bara i minnet, en "gardin" på klientsidan
-let waitTimer = null;
-let hideTimer = null;
+let meta = null;
 let busy = false;
+let hideTimer = null;
 
 document.title = CONFIG.title;
-$('title').textContent = CONFIG.title;
-$('forgot').textContent = `Glömt koden? Fråga ${CONFIG.adminName}.`;
+for (const el of document.querySelectorAll('.year')) el.textContent = String(CONFIG.year);
+$('error-help').textContent = `Hittar du inte dig? Fråga ${CONFIG.adminName}.`;
 
-function showError(text) {
-  $('error').textContent = text;
+// Visar de delar av sidan som hör till ett visst läge (loading, start, notready, result).
+function setView(view) {
+  document.body.dataset.view = view;
+  for (const el of document.querySelectorAll('[data-show]')) {
+    el.hidden = !el.dataset.show.split(' ').includes(view);
+  }
+}
+
+function showError(text, withHelp = false) {
+  $('error-text').textContent = text;
+  $('error-help').hidden = !withHelp;
   $('error').hidden = !text;
 }
 
 async function load() {
-  const participants = await loadParticipants();
-  $('loading').hidden = true;
-  if (!participants) {
-    $('not-ready').hidden = false;
-    return;
-  }
-  participants.sort((a, b) => String(a.name).localeCompare(String(b.name), 'sv'));
-  const select = $('who');
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = '– välj ditt namn –';
-  select.append(placeholder);
-  for (const p of participants) {
-    if (!/^[0-9a-f]{16}$/.test(p.id)) continue;
-    const o = document.createElement('option');
-    o.value = p.id;
-    o.textContent = p.name;
-    select.append(o);
-  }
-  $('form').hidden = false;
-}
-
-function startWait(seconds) {
-  clearInterval(waitTimer);
-  let left = seconds;
-  const button = $('submit');
-  const tick = () => {
-    if (left <= 0) {
-      clearInterval(waitTimer);
-      button.disabled = false;
-      button.textContent = 'Visa min person';
-      return;
-    }
-    button.disabled = true;
-    button.textContent = `Vänta ${left} s…`;
-    left--;
-  };
-  tick();
-  waitTimer = setInterval(tick, 1000);
+  meta = await loadMeta();
+  setView(meta ? 'start' : 'notready');
 }
 
 $('form').addEventListener('submit', async (ev) => {
   ev.preventDefault();
-  if (busy || $('submit').disabled) return;
-  const id = $('who').value;
-  const pin = $('pin').value;
+  if (busy || !meta) return;
   showError('');
-  if (!/^[0-9a-f]{16}$/.test(id)) return showError('Välj ditt namn i listan.');
-  if (!/^\d{4}$/.test(pin)) return showError('Koden är 4 siffror.');
-
   busy = true;
   $('submit').disabled = true;
-  $('submit').textContent = 'Kontrollerar…';
+  $('submit-label').textContent = 'Letar upp din person…';
   let result;
   try {
-    result = await openEnvelope({ id, pin });
+    result = await openEnvelope({ typed: $('name').value, salt: meta.salt });
   } finally {
     busy = false;
+    $('submit').disabled = false;
+    $('submit-label').textContent = SUBMIT_LABEL;
   }
-
   if (result.ok) {
-    failures = 0;
-    show(result.name);
+    show(result);
     return;
   }
-  if (result.reason === 'wrong-code') {
-    failures++;
-    showError(MESSAGES.wrongCode);
-    $('pin').value = '';
-    startWait(Math.min(2 ** failures, MAX_WAIT_SECONDS));
-    return;
-  }
-  // Gammal lottning (404) eller nätfel: inget fel på koden, ingen väntetid.
-  showError(result.message);
-  $('submit').disabled = false;
-  $('submit').textContent = 'Visa min person';
+  // "Fråga admin" är bara till hjälp när namnet inte hittas eller lappen inte går att öppna.
+  showError(result.message, result.reason === 'not-found' || result.reason === 'broken');
 });
 
-function show(name) {
-  $('recipient').textContent = name;
-  $('form').hidden = true;
-  $('result').hidden = false;
-  $('pin').value = '';
-  $('submit').disabled = false;
-  $('submit').textContent = 'Visa min person';
+function firstName(name) {
+  return String(name).split(' ')[0];
+}
+
+function show({ giver, recipient }) {
+  $('hello-name').textContent = firstName(giver);
+  $('recipient').textContent = recipient;
+  $('recipient-first').textContent = firstName(recipient);
+  $('name').value = '';
+  setView('result');
+  window.scrollTo(0, 0);
+  $('result').focus({ preventScroll: true }); // skärmläsare börjar läsa i kortet
+
   let left = AUTO_HIDE_SECONDS;
   const tick = () => {
     if (left <= 0) return hide();
-    $('countdown').textContent = `Döljs automatiskt om ${left} s`;
+    $('countdown').textContent = `Göms automatiskt om ${left} s.`;
     left--;
   };
   clearInterval(hideTimer);
@@ -118,17 +81,16 @@ function show(name) {
 
 function hide() {
   clearInterval(hideTimer);
-  $('recipient').textContent = '';
-  $('countdown').textContent = '';
-  $('result').hidden = true;
-  $('pin').value = '';
-  $('form').hidden = false;
+  for (const id of ['recipient', 'recipient-first', 'hello-name', 'countdown']) $(id).textContent = '';
+  $('name').value = '';
+  showError('');
+  setView('start');
 }
 
 $('hide').addEventListener('click', hide);
-// Dölj också direkt om fliken/appen lämnas.
+// Göm också direkt om fliken/appen lämnas.
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && !$('result').hidden) hide();
+  if (document.hidden && document.body.dataset.view === 'result') hide();
 });
 
 load();

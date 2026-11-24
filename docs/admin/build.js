@@ -5,20 +5,29 @@
 // lämnar den här funktionen enbart som krypterade filer.
 
 import { draw as realDraw } from '../lib/draw.js';
-import { encryptEntry, randomId, generatePin, MAX_NAME_BYTES, DEFAULT_ITERATIONS } from '../lib/crypto.js';
+import { encryptEntry, fileId, newSalt, MAX_NAME_BYTES, DEFAULT_ITERATIONS } from '../lib/crypto.js';
+import { nameKey } from '../lib/names.js';
 
 const norm = (s) => s.replace(/\s+/g, ' ').trim();
-const key = (s) => s.toLocaleLowerCase('sv');
 
-/** Läser namnlistan. Tål radnummer före namnet och ';' efter. */
+/**
+ * Läser namnlistan. Tål radnummer före namnet och ';' efter.
+ * Två namn räknas som dubbletter om de ger samma nyckel (se lib/names.js), t.ex.
+ * "Åsa Berg" och "asa  berg". Det är nyckeln som personen skriver in på sidan.
+ */
 export function parseNames(text) {
   const names = [];
   const seen = new Map();
   const duplicates = [];
+  const invalid = [];
   for (const raw of String(text).split(/\r?\n/)) {
     const name = norm(raw.replace(/^\s*\d+[.)]?\s+/, '').replace(/[;,\s]+$/, ''));
     if (!name) continue;
-    const k = key(name);
+    const k = nameKey(name);
+    if (!k) {
+      invalid.push(name);
+      continue;
+    }
     if (seen.has(k)) {
       if (!duplicates.includes(seen.get(k))) duplicates.push(seen.get(k));
       continue;
@@ -27,7 +36,7 @@ export function parseNames(text) {
     names.push(name);
   }
   const tooLong = names.filter((n) => new TextEncoder().encode(n).length > MAX_NAME_BYTES);
-  return { names, duplicates, tooLong };
+  return { names, duplicates, tooLong, invalid };
 }
 
 export function firstName(name) {
@@ -42,11 +51,12 @@ export function normalizeBaseUrl(url) {
   return u.endsWith('/') ? u : `${u}/`;
 }
 
-export function messageFor(name, url, pin) {
+/** Ett gemensamt meddelande till hela släkten. Det innehåller inga hemligheter. */
+export function messageFor(url) {
   return (
-    `Hej ${firstName(name)}! Här är släktens Secret Santa: ${url} . ` +
-    `Välj ditt namn i listan och skriv in din kod: ${pin}. ` +
-    `Då får du se vem du ska ge julklapp till. Visa den inte för någon annan!`
+    `Hej! Nu är det dags för släktens Secret Santa: ${url}\n` +
+    `Skriv ditt för- och efternamn på sidan så får du se vem du ska ge julklapp till. ` +
+    `Visa den inte för någon annan!`
   );
 }
 
@@ -58,40 +68,31 @@ export function messageFor(name, url, pin) {
  * @param {string} o.baseUrl
  * @param {number} [o.iterations]
  * @param {Function} [o.drawFn]  endast för tester
- * @returns {Promise<{files: Array<{path:string, content:string}>, utskick:string, warnings:string[], count:number}>}
+ * @returns {Promise<{files: Array<{path:string, content:string}>, message:string, warnings:string[], count:number}>}
  */
 export async function createLottery({ names, exclusions, noMutual, baseUrl, iterations = DEFAULT_ITERATIONS, drawFn = realDraw }) {
   const url = normalizeBaseUrl(baseUrl);
+
+  const keys = names.map(nameKey);
+  if (keys.some((k) => !k)) throw new Error('Ett namn saknar bokstäver.');
+  if (new Set(keys).size !== keys.length) {
+    throw new Error('Två namn går inte att skilja åt när man skriver dem (t.ex. samma namn med och utan å/ä/ö). Lägg till ett mellannamn på den ena.');
+  }
+
   const { assignment, warnings } = drawFn({ names, exclusions, noMutual });
 
-  const ids = new Set();
-  const people = names.map((name) => {
-    let id;
-    do id = randomId();
-    while (ids.has(id));
-    ids.add(id);
-    return { name, id, pin: generatePin() };
-  });
-
+  const salt = newSalt();
   const files = await Promise.all(
-    people.map(async (p) => ({
-      path: `data/${p.id}.json`,
-      content: await encryptEntry({ id: p.id, pin: p.pin, recipient: assignment.get(p.name), iterations }),
-    })),
+    names.map(async (name) => {
+      const key = nameKey(name);
+      const id = await fileId(salt, key);
+      return {
+        path: `data/${id}.json`,
+        content: await encryptEntry({ id, secret: key, giver: name, recipient: assignment.get(name), iterations }),
+      };
+    }),
   );
+  files.unshift({ path: 'data/meta.json', content: JSON.stringify({ v: 2, salt }) + '\n' });
 
-  const participants = people
-    .map(({ id, name }) => ({ id, name }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'sv'));
-  files.unshift({ path: 'data/participants.json', content: JSON.stringify({ v: 1, participants }, null, 2) + '\n' });
-
-  const header =
-    'VARNING: Den här filen innehåller PIN-koder. Checka ALDRIG in den i repot och skicka bara varje persons eget meddelande till just den personen.\n' +
-    'Spara filen på din egen dator: du behöver den om någon glömmer sin kod (då skickar du om just den personens meddelande). Radera den efter jul.\n';
-  const blocks = [...people]
-    .sort((a, b) => a.name.localeCompare(b.name, 'sv'))
-    .map((p) => `=== ${p.name} ===\n${messageFor(p.name, url, p.pin)}\n`);
-  const utskick = `${header}\n${blocks.join('\n')}`;
-
-  return { files, utskick, warnings, count: people.length };
+  return { files, message: messageFor(url), warnings, count: names.length };
 }
