@@ -86,10 +86,12 @@
         <section id="result" class="card card-result" data-show="result" aria-live="polite" tabindex="-1" hidden>
           <p class="card-eyebrow on-green">Din person</p>
           <h2 class="card-title on-green">Hemligheten är ute. Nästan.</h2>
-          <div class="name-card">
-            <p class="name-label">Du är den hemliga tomten för:</p>
-            <p id="recipient" class="name-script"></p>
-            <hr class="name-rule">
+          <div class="name-slot">
+            <div class="name-card">
+              <p class="name-label">Du är den hemliga tomten för:</p>
+              <p id="recipient" class="name-script"></p>
+              <hr class="name-rule">
+            </div>
           </div>
           <p class="on-green lead">Du fick turen att ge en julklapp till <span id="recipient-first"></span>.</p>
           <button id="hide" class="btn-pale" type="button">Göm min person</button>
@@ -106,6 +108,7 @@
           <p id="countdown" class="countdown"></p>
         </div>
       </div>
+      <span id="slip" class="slip" aria-hidden="true"></span>
     </main>
 
     <footer class="band">
