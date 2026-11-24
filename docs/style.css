@@ -34,7 +34,7 @@ body {
 p, h1, h2, ol { margin: 0; }
 img { display: block; max-width: 100%; height: auto; }
 
-.page { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+.page { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; overflow-x: clip; } /* tomten kan gå in från sidan utan att ge sidscroll */
 .wrap { width: min(1200px, 100% - 2 * var(--gutter)); margin-inline: auto; }
 
 /* ---------- Topp ---------- */
@@ -54,6 +54,7 @@ img { display: block; max-width: 100%; height: auto; }
 
 /* ---------- Hero ---------- */
 .hero {
+  position: relative;
   flex: 1;
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
@@ -74,7 +75,7 @@ img { display: block; max-width: 100%; height: auto; }
 .lede { margin-top: 24px; font-size: 17px; line-height: 26px; color: var(--body); }
 .art { margin-top: 62px; }
 .art-envelope { width: 547px; margin-left: -13px; }
-.art-santa { width: 498px; margin-top: 63px; }
+.art-santa { position: relative; z-index: 3; width: 498px; margin-top: 63px; transform-origin: 45% 90%; }
 
 .panel { justify-self: end; width: 100%; max-width: 520px; margin-top: 9px; }
 
@@ -163,8 +164,29 @@ img { display: block; max-width: 100%; height: auto; }
 }
 .card-eyebrow.on-green { color: rgba(255, 255, 255, 0.9); letter-spacing: 0.1em; text-transform: none; }
 .card-result .card-title { margin-top: 28px; font-size: 29px; color: #fff; }
+.name-slot { position: relative; margin-top: 31px; }
+/* Tom plats som syns tills tomten dragit fram lappen (bara under animationen, se app.js). */
+.is-reveal .name-slot::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  z-index: 0;
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 18px;
+}
+.is-reveal .name-slot::after {
+  content: 'Tomten letar i säcken…';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
 .name-card {
-  margin-top: 31px;
+  position: relative;
+  z-index: 1;
   padding: 29px 20px 26px;
   border-radius: 20px;
   background: linear-gradient(180deg, #eeefe9 0%, #eef0ea 100%);
@@ -193,6 +215,34 @@ img { display: block; max-width: 100%; height: auto; }
 .card-result .fine { margin-top: 24px; font-size: 13.5px; color: rgba(255, 255, 255, 0.85); }
 .eyes-only { margin-top: 31px; text-align: center; font-size: 13px; line-height: 18px; color: var(--body); }
 .countdown { margin-top: 4px; font-size: 12px; color: var(--muted); }
+
+/* Lappen tomten drar upp ur säcken. Flyttas av app.js (bara på dator). */
+.slip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 4;
+  width: 64px;
+  height: 44px;
+  margin: -22px 0 0 -32px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #fffdf8 0 47%, #e7dcc6 47% 53%, #fff9ee 53% 100%);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  pointer-events: none;
+}
+.slip::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+}
 
 /* ---------- Steg ---------- */
 .steps {
@@ -225,9 +275,13 @@ img { display: block; max-width: 100%; height: auto; }
   .eyebrow { font-size: 11px; }
   .script-title { margin-top: 17px; font-size: clamp(2.1rem, 11.8vw, 3.3rem); line-height: 1.04; }
   .lede { margin-top: 16px; font-size: 15px; line-height: 24px; }
-  .art-envelope { width: 230px; margin: 54px auto 48px; transform: translateX(2px); }
-  .art-santa { width: 299px; margin: 14px auto 32px; transform: translateX(-3px); }
-  .panel { justify-self: stretch; max-width: none; margin-top: 0; }
+  /* Bilden ligger under textrutan så att den inte är i vägen. */
+  .intro { display: contents; }
+  .panel { order: 1; justify-self: stretch; max-width: none; margin-top: 36px; }
+  .art { order: 2; }
+  .art-envelope { width: 230px; margin: 44px auto 0; transform: translateX(2px); }
+  .art-santa { width: 299px; margin: 40px auto 0; transform: translateX(-3px); }
+  .slip { display: none; }
 
   .card { padding: 25px 24px 26px; border-radius: 28px; }
   .card-title { margin-top: 20px; font-size: 29px; }
@@ -243,7 +297,8 @@ img { display: block; max-width: 100%; height: auto; }
 
   .card-result { padding: 25px 24px 27px; }
   .card-result .card-title { margin-top: 20px; font-size: 28px; line-height: 35px; }
-  .name-card { margin-top: 21px; padding: 24px 16px 25px; }
+  .name-slot { margin-top: 21px; }
+  .name-card { padding: 24px 16px 25px; }
   .name-label { font-size: 10px; letter-spacing: 0.1em; }
   .name-script { margin-top: 15px; font-size: 46px; line-height: 58px; }
   .name-rule { margin-top: 10px; }
