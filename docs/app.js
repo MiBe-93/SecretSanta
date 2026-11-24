@@ -59,9 +59,21 @@ function firstName(name) {
   return String(name).split(' ')[0];
 }
 
+// Förnamnet på en rad och resten av namnet på nästa, som i designen.
+function renderName(el, name) {
+  el.replaceChildren();
+  const [first, ...rest] = String(name).split(' ');
+  for (const part of [first, rest.join(' ')]) {
+    if (!part) continue;
+    const line = document.createElement('span');
+    line.textContent = part;
+    el.append(line);
+  }
+}
+
 function show({ giver, recipient }) {
   $('hello-name').textContent = firstName(giver);
-  $('recipient').textContent = recipient;
+  renderName($('recipient'), recipient);
   $('recipient-first').textContent = firstName(recipient);
   $('name').value = '';
   setView('result');

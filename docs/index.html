@@ -7,7 +7,7 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex,nofollow">
   <meta name="color-scheme" content="light">
-  <meta name="theme-color" content="#fffcf6">
+  <meta name="theme-color" content="#fffcf7">
   <title>Familjens Secret Santa</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -18,7 +18,7 @@
       <div class="wrap">
         <div class="bar">
           <div class="brand">
-            <img class="brand-logo" src="img/logo.svg" alt="" width="30" height="34">
+            <img class="brand-logo" src="img/logo.png" alt="" width="45" height="58">
             <span data-show="loading start notready">Julen med släkten</span>
             <span data-show="result" hidden>hemlig tomte</span>
           </div>
@@ -41,14 +41,14 @@
         <p class="eyebrow">Nu är det jul igen...</p>
         <h1 class="script-title"><span class="t-green">Familjens</span><span class="t-red">Secret santa <span class="year"></span></span></h1>
         <p class="lede">och julen varar väl till påska...</p>
-        <img class="art art-envelope" src="img/envelope.svg" alt="" width="330" height="240">
+        <img class="art art-envelope" src="img/envelope.webp" alt="" width="547" height="328">
       </section>
 
       <section class="intro" data-show="result" hidden>
         <p class="eyebrow">Ett namn. En omtänksam överraskning.</p>
         <h1 class="script-title"><span class="t-green">Familjens,</span><span class="t-red">hemlig tomte <span class="year"></span></span></h1>
         <p class="lede">Hej <span id="hello-name"></span>, glöm inte att hålla det här hemligt.</p>
-        <img class="art art-santa" src="img/santa.svg" alt="" width="360" height="300">
+        <img class="art art-santa" src="img/santa.webp" alt="" width="498" height="386" loading="lazy">
       </section>
 
       <!-- Höger: kort. Ett per läge. -->
@@ -59,14 +59,14 @@
           <p class="card-eyebrow">Snart är det dags</p>
           <h2 class="card-title">Hej där!</h2>
           <p class="notice">Lottningen är inte gjord än.</p>
-          <p class="small">Kom tillbaka när du fått beskedet att den är klar.</p>
+          <p class="sub">Kom tillbaka när du fått beskedet att den är klar.</p>
         </section>
 
         <form id="form" class="card card-start" data-show="start" autocomplete="off" novalidate hidden>
           <p class="card-eyebrow">Hitta din</p>
           <h2 class="card-title">Hej där!</h2>
-          <p class="hello"><strong>Ho ho ho, vem får du?</strong> <img src="img/hat.svg" alt="" width="22" height="22"></p>
-          <p class="small">Skriv ditt namn och se vem du ska överraska i år!</p>
+          <p class="hello"><strong>Ho ho ho, vem får du?</strong><span class="sep" aria-hidden="true">•</span><img src="img/hat.svg" alt="" width="22" height="22"></p>
+          <p class="sub">Skriv ditt namn och se vem du ska överraska i år!</p>
 
           <label for="name" class="label">Ditt namn</label>
           <input id="name" class="input" type="text" placeholder="Skriv ditt för- och efternamn..." autocomplete="off" autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="go" maxlength="80">
@@ -78,7 +78,7 @@
 
           <button id="submit" class="btn-red" type="submit">
             <span id="submit-label">Lotta fram min julklappskompis</span>
-            <svg class="arrow" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            <svg class="arrow" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
           <p class="fine">Ingen inloggning behövs.</p>
         </form>
@@ -89,24 +89,28 @@
           <div class="name-card">
             <p class="name-label">Du är den hemliga tomten för:</p>
             <p id="recipient" class="name-script"></p>
+            <hr class="name-rule">
           </div>
-          <p class="on-green center">Du fick turen att ge en julklapp till <span id="recipient-first"></span>. Det blir alltid samma person, ingen ny lottning sker.</p>
+          <p class="on-green lead">Du fick turen att ge en julklapp till <span id="recipient-first"></span>.</p>
           <button id="hide" class="btn-pale" type="button">Göm min person</button>
           <p class="fine on-green">Shhh... låt oss hålla detta mellan oss.</p>
         </section>
 
         <ol class="steps" data-show="loading start notready">
-          <li><b>01</b> Skriv ditt namn</li>
-          <li><b>02</b> Möt din person</li>
-          <li><b>03</b> Gör deras dag</li>
+          <li>01 Skriv ditt namn</li>
+          <li>02 Möt din person</li>
+          <li>03 Gör deras dag</li>
         </ol>
-        <p class="eyes-only" data-show="result" hidden>Endast för dina ögon. <span id="countdown"></span></p>
+        <div class="eyes-only" data-show="result" hidden>
+          <p>Endast för dina ögon. Samma person varje gång, ingen ny lottning sker.</p>
+          <p id="countdown" class="countdown"></p>
+        </div>
       </div>
     </main>
 
     <footer class="band">
       <div class="wrap band-row">
-        <span>En liten hemlighet. Lite magi. En gåva från hjärtat.</span>
+        <span class="band-left">En liten hemlighet. Lite magi. En gåva från hjärtat.</span>
         <span>Håll hemligheten. Sprid glädjen.</span>
       </div>
     </footer>
