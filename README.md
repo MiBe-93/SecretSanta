@@ -129,7 +129,7 @@ Om någon öppnar sidan medan filerna är mellan två versioner visas "Vi hittar
 
 ## Utseende
 
-Sidan följer designen "Julen med släkten / hemlig tomte". Texterna står i `docs/index.html`, färger och typsnitt i `docs/style.css`, och bilderna (kuvert, tomte, logga, tomtemössa) är SVG-filer i `docs/img/`. Typsnitten (Inter, Fraunces och Dancing Script, alla under SIL Open Font License) ligger i `docs/fonts/`, så inget hämtas från andra adresser. Admin-sidan har ett enklare utseende i `docs/admin/admin.css`.
+Sidan följer designen "Julen med släkten / hemlig tomte". Texterna står i `docs/index.html`, färger och typsnitt i `docs/style.css`, och bilderna (kuvert, tomte, logga, tomtemössa) ligger i `docs/img/`. Designbilderna sidan är byggd efter finns i `design/`. Typsnitten (Inter, Fraunces och Dancing Script, alla under SIL Open Font License) ligger i `docs/fonts/`, så inget hämtas från andra adresser. Admin-sidan har ett enklare utseende i `docs/admin/admin.css`.
 
 ## Tekniska detaljer
 
